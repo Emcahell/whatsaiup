@@ -1,21 +1,113 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface: #fafaf3;
+  --surface-dim: #dbdad4;
+  --surface-bright: #fafaf3;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f5f4ed;
+  --surface-container: #efeee7;
+  --surface-container-high: #e9e8e2;
+  --surface-container-highest: #e3e3dc;
+  --on-surface: #1b1c18;
+  --on-surface-variant: #434843;
+  --inverse-surface: #30312c;
+  --inverse-on-surface: #f2f1ea;
+  --outline: #737873;
+  --outline-variant: #c3c8c1;
+  --surface-tint: #4f6354;
+  --primary: #384b3d;
+  --on-primary: #ffffff;
+  --primary-container: #4f6354;
+  --on-primary-container: #c8decb;
+  --inverse-primary: #b6ccba;
+  --secondary: #4f6354;
+  --on-secondary: #ffffff;
+  --secondary-container: #d1e8d5;
+  --on-secondary-container: #55695a;
+  --tertiary: #4c4634;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #645e4a;
+  --on-tertiary-container: #e1d8bf;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+  --primary-fixed: #d2e8d5;
+  --primary-fixed-dim: #b6ccba;
+  --on-primary-fixed: #0d1f14;
+  --on-primary-fixed-variant: #384b3d;
+  --secondary-fixed: #d1e8d5;
+  --secondary-fixed-dim: #b6ccba;
+  --on-secondary-fixed: #0c1f14;
+  --on-secondary-fixed-variant: #374b3d;
+  --tertiary-fixed: #ece2c9;
+  --tertiary-fixed-dim: #cfc6ae;
+  --on-tertiary-fixed: #201b0c;
+  --on-tertiary-fixed-variant: #4c4634;
+  --background: #fafaf3;
+  --on-background: #1b1c18;
+  --surface-variant: #e3e3dc;
+  --foreground: var(--on-background);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-surface-tint: var(--surface-tint);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+  --color-on-background: var(--on-background);
+  --color-surface-variant: var(--surface-variant);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--inverse-surface);
+    --foreground: var(--inverse-on-surface);
   }
 }
 
