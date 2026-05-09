@@ -51,6 +51,38 @@
   --foreground: var(--on-background);
 }
 
+:root.dark {
+  --surface: #1b1c18;
+  --surface-dim: #30312c;
+  --surface-bright: #434843;
+  --surface-container-lowest: #1b1c18;
+  --surface-container-low: #232420;
+  --surface-container: #2b2c28;
+  --surface-container-high: #363733;
+  --surface-container-highest: #41423d;
+  --on-surface: #e3e3dc;
+  --on-surface-variant: #c3c8c1;
+  --outline: #8d928a;
+  --outline-variant: #434843;
+  --primary: #b6ccba;
+  --on-primary: #1b1c18;
+  --primary-container: #3a4b3e;
+  --on-primary-container: #c8decb;
+  --inverse-primary: #4f6354;
+  --secondary: #b6ccba;
+  --on-secondary: #1b1c18;
+  --secondary-container: #3a4b3e;
+  --on-secondary-container: #c8decb;
+  --tertiary: #d1c4a9;
+  --on-tertiary: #1b1c18;
+  --tertiary-container: #645e4a;
+  --on-tertiary-container: #e1d8bf;
+  --background: #1b1c18;
+  --on-background: #e3e3dc;
+  --surface-variant: #434843;
+  --foreground: var(--on-background);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -101,13 +133,6 @@
   --color-on-background: var(--on-background);
   --color-surface-variant: var(--surface-variant);
   --font-sans: var(--font-roboto-flex);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: var(--inverse-surface);
-    --foreground: var(--inverse-on-surface);
-  }
 }
 
 body {

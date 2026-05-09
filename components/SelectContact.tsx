@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
+import { useLanguage } from "../context/LanguageContext";
 
 const CONTACTS = [
   {
@@ -58,21 +59,23 @@ const CONTACTS = [
 
 export default function SelectContactScreen() {
   const router = useRouter();
+  const { translations } = useLanguage();
+  const t = (key: string) => translations[key as keyof typeof translations] || key;
 
   return (
     <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col">
       {/* Header */}
-      <header className="px-5 pt-12 pb-4 flex items-center justify-between">
+      <header className="px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="p-2 -ml-2 text-on-surface-variant">
+          <button onClick={() => router.back()} className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center">
             <MaterialSymbol name="arrow_back" className="text-2xl" />
           </button>
           <h1 className="text-[24px] font-medium font-sans text-primary tracking-tight">
-            Select Contact
+            {t('select_contact')}
           </h1>
         </div>
         <div className="flex items-center gap-1">
-          <button className="p-2 text-on-surface-variant">
+          <button className="p-2 text-on-surface-variant flex items-center justify-center">
             <MaterialSymbol name="search" className="text-2xl" />
           </button>
         </div>
@@ -87,7 +90,7 @@ export default function SelectContactScreen() {
             <div className="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
               <MaterialSymbol name="person_add" className="text-2xl" filled />
             </div>
-            <span className="text-lg font-medium">New Contact</span>
+            <span className="text-lg font-medium">{t('new_contact')}</span>
           </button>
         </div>
 

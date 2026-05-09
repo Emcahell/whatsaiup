@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto_Flex } from "next/font/google";
 import 'material-symbols';
 import './globals.css';
+import Providers from '../context/Providers';
 
 const robotoFlex = Roboto_Flex({
   variable: "--font-roboto-flex",
@@ -23,7 +24,9 @@ export default function RootLayout({
       lang="en"
       className={`${robotoFlex.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

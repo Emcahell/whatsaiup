@@ -3,83 +3,125 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
+import ConfirmDialog from "./ui/ConfirmDialog";
 import { useLanguage } from "../context/LanguageContext";
-import { AIProvider } from "../lib/types";
+import { getModelById, saveModel, deleteModel } from "../lib/db/models";
 import { PROVIDER_INFO, getProviderModels } from "../lib/ai/providers";
-import { saveModel, generateId } from "../lib/db/models";
+import { AIProvider } from "../lib/types";
 
-export default function NewContactScreen() {
+export default function EditContactScreen({ modelId }: { modelId?: string }) {
   const router = useRouter();
   const { translations } = useLanguage();
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [provider, setProvider] = useState<AIProvider>("openai");
   const [apiKey, setApiKey] = useState("");
-  const [modelId, setModelId] = useState("");
+  const [modelIdValue, setModelIdValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    const models = getProviderModels(provider);
-    if (models.length > 0) {
-      setModelId(models[0].id);
-    }
-  }, [provider]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!name.trim()) {
-      setError(t('name_required'));
+    if (!modelId) {
+      setError("No model ID provided");
+      setLoading(false);
       return;
     }
 
-    if (!apiKey.trim()) {
-      setError(t('api_key_required'));
-      return;
-    }
+    getModelById(modelId).then((model) => {
+      if (!model) {
+        setError("Model not found");
+        setLoading(false);
+        return;
+      }
+      setName(model.name);
+      setProvider(model.provider);
+      setApiKey(model.apiKey);
+      setModelIdValue(model.modelId);
+      setLoading(false);
+    }).catch(() => {
+      setError("Error loading model");
+      setLoading(false);
+    });
+  }, [modelId]);
+
+  const availableModels = getProviderModels(provider);
+
+  const handleSave = async () => {
+    if (!modelId || !name.trim() || !apiKey.trim()) return;
 
     setIsSaving(true);
+    setError("");
 
     try {
-      const model = {
-        id: generateId(),
+      await saveModel({
+        id: modelId,
         name: name.trim(),
         provider,
         apiKey: apiKey.trim(),
-        modelId,
+        modelId: modelIdValue,
         temperature: 0.7,
         createdAt: Date.now(),
-      };
-
-      await saveModel(model);
-      router.push('/');
-    } catch (err) {
-      setError(t('error_saving_model'));
+      });
+      router.back();
+    } catch {
+      setError("Error saving model");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const providers = Object.entries(PROVIDER_INFO) as [AIProvider, typeof PROVIDER_INFO[AIProvider]][];
-  const availableModels = getProviderModels(provider);
+  const handleDelete = async () => {
+    if (!modelId) return;
+    try {
+      await deleteModel(modelId);
+      router.push('/');
+    } catch {
+      setError("Error deleting model");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col items-center justify-center">
+        <MaterialSymbol name="hourglass_empty" className="text-5xl animate-spin" />
+      </div>
+    );
+  }
+
+  if (error && !name) {
+    return (
+      <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col items-center justify-center">
+        <MaterialSymbol name="error" className="text-5xl mb-4 text-error" />
+        <p className="text-body-lg mb-4">{error}</p>
+        <button
+          onClick={() => router.back()}
+          className="px-4 py-2 bg-primary text-on-primary rounded-full"
+        >
+          Go back
+        </button>
+      </div>
+    );
+  }
+
+  const providerInfo = PROVIDER_INFO[provider];
 
   return (
     <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col">
       {/* Header */}
       <header className="px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="p-2 -ml-2 text-on-surface-variant">
+          <button onClick={() => router.back()} className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center">
             <MaterialSymbol name="arrow_back" className="text-2xl" />
           </button>
           <h1 className="text-[24px] font-medium text-primary tracking-tight">
-            {t('new_ai_model')}
+            {t('edit_contact')}
           </h1>
         </div>
         <button
-          onClick={handleSubmit}
+          onClick={handleSave}
           disabled={isSaving}
           className="px-4 py-2 text-primary font-semibold text-lg hover:bg-primary/5 rounded-full transition-colors disabled:opacity-50"
         >
@@ -88,24 +130,21 @@ export default function NewContactScreen() {
       </header>
 
       <div className="flex-1 overflow-y-auto px-5 py-6 space-y-8">
-        {/* Profile Icon */}
+        {/* Provider Avatar (no edit button) */}
         <div className="flex flex-col items-center gap-4">
           <div className="w-32 h-32 rounded-full bg-surface-container flex items-center justify-center overflow-hidden">
             <img
-              src={PROVIDER_INFO[provider].logo}
-              alt={PROVIDER_INFO[provider].name}
+              src={providerInfo.logo}
+              alt={providerInfo.name}
               className="w-20 h-20"
-              style={{ filter: `drop-shadow(0 2px 4px ${PROVIDER_INFO[provider].color}60)` }}
+              style={{ filter: `drop-shadow(0 2px 4px ${providerInfo.color}60)` }}
             />
           </div>
-          <span className="text-sm font-medium text-on-surface-variant">
-            {PROVIDER_INFO[provider].name}
-          </span>
         </div>
 
         {/* Form Fields */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Alias Name */}
+        <div className="space-y-6">
+          {/* Name */}
           <div className="space-y-2">
             <label className="text-label-md font-semibold px-2 text-on-surface-variant">
               {t('alias_name')}
@@ -118,44 +157,26 @@ export default function NewContactScreen() {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setError("");
-                }}
+                onChange={(e) => { setName(e.target.value); setError(""); }}
                 placeholder={t('alias_placeholder')}
                 className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12"
               />
             </div>
           </div>
 
-          {/* Provider */}
+          {/* Provider (read-only) */}
           <div className="space-y-2">
             <label className="text-label-md font-semibold px-2 text-on-surface-variant">
               {t('provider')}
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {providers.map(([key, info]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setProvider(key)}
-                  className={`p-4 rounded-2xl border-2 transition-all ${
-                    provider === key
-                      ? 'border-primary bg-primary/5'
-                      : 'border-surface-container hover:bg-surface-container'
-                  }`}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <img
-                      src={info.logo}
-                      alt={info.name}
-                      className="w-7 h-7"
-                      style={{ filter: `drop-shadow(0 1px 3px ${info.color}50)` }}
-                    />
-                    <span className="text-sm font-medium">{info.name}</span>
-                  </div>
-                </button>
-              ))}
+            <div className="flex items-center gap-3 px-4 bg-surface-container-lowest h-16 rounded-[16px]">
+              <img
+                src={providerInfo.logo}
+                alt={providerInfo.name}
+                className="w-7 h-7"
+                style={{ filter: `drop-shadow(0 1px 2px ${providerInfo.color}50)` }}
+              />
+              <span className="text-body-lg">{providerInfo.name}</span>
             </div>
           </div>
 
@@ -172,17 +193,11 @@ export default function NewContactScreen() {
               <input
                 type="password"
                 value={apiKey}
-                onChange={(e) => {
-                  setApiKey(e.target.value);
-                  setError("");
-                }}
+                onChange={(e) => { setApiKey(e.target.value); setError(""); }}
                 placeholder={t('api_key_placeholder')}
                 className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12"
               />
             </div>
-            <p className="text-xs text-on-surface-variant px-2">
-              {t('api_key_security_note')}
-            </p>
           </div>
 
           {/* Model */}
@@ -196,14 +211,12 @@ export default function NewContactScreen() {
                 className="absolute left-4 text-on-surface-variant"
               />
               <select
-                value={modelId}
-                onChange={(e) => setModelId(e.target.value)}
+                value={modelIdValue}
+                onChange={(e) => setModelIdValue(e.target.value)}
                 className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all pl-12 pr-4 appearance-none cursor-pointer"
               >
-                {availableModels.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
+                {availableModels.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
               <MaterialSymbol
@@ -218,19 +231,29 @@ export default function NewContactScreen() {
               {error}
             </div>
           )}
-        </form>
+        </div>
 
         {/* Delete Action */}
         <div className="py-8 flex justify-center">
           <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-on-surface-variant font-semibold py-2 px-6 hover:bg-surface-container rounded-full transition-colors"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-2 text-error font-semibold py-2 px-6 hover:bg-error/5 rounded-full transition-colors"
           >
-            <MaterialSymbol name="close" className="text-2xl" />
-            {t('cancel')}
+            <MaterialSymbol name="delete" className="text-2xl" />
+            {t('delete_contact')}
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title={t('delete_contact')}
+        message={t('delete_confirm_message')}
+        confirmLabel={t('delete')}
+        cancelLabel={t('cancel')}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }
