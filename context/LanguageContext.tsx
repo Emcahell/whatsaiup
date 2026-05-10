@@ -67,6 +67,8 @@ const translationsData: Record<Language, Record<string, string>> = {
     "delete_confirm_message": "Are you sure you want to delete this AI model? This action cannot be undone.",
     "sending_message": "Sending...",
     "type_message": "Type a message...",
+    "instruction": "Instruction",
+    "instruction_placeholder": "e.g. Keep responses brief and concise.",
   },
   es: {
     "whatsaiup": "Whatsaiup",
@@ -124,6 +126,8 @@ const translationsData: Record<Language, Record<string, string>> = {
     "delete_confirm_message": "¿Estás seguro de que quieres eliminar este modelo de IA? Esta acción no se puede deshacer.",
     "sending_message": "Enviando...",
     "type_message": "Escribe un mensaje...",
+    "instruction": "Instrucción",
+    "instruction_placeholder": "ej. Respuestas breves y concisas.",
   },
 };
 

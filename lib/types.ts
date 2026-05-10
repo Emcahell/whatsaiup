@@ -7,6 +7,7 @@ export interface AIModel {
   apiKey: string;
   modelId: string;
   temperature: number;
+  systemPrompt?: string;
   createdAt: number;
 }
 

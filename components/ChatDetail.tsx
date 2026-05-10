@@ -11,6 +11,7 @@ import { createAIClient, ChatMessage } from "../lib/ai/client";
 import { AIModel, Conversation } from "../lib/types";
 import { PROVIDER_INFO, checkModelAvailability } from "../lib/ai/providers";
 import { formatMessageTime, getDateLabel as getDateLabelTz, getDiffDays } from "../lib/time";
+import Markdown from "./ui/Markdown";
 
 interface MessageItem {
   id: string;
@@ -132,12 +133,17 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
 
       const client = createAIClient(model.provider, model.apiKey, model.modelId);
       
-      const chatMessages: ChatMessage[] = messages
-        .filter(m => !m.isStreaming)
-        .map(m => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        }));
+      const chatMessages: ChatMessage[] = [];
+      
+      if (model.systemPrompt) {
+        chatMessages.push({ role: 'system', content: model.systemPrompt });
+      }
+      
+      for (const m of messages) {
+        if (!m.isStreaming) {
+          chatMessages.push({ role: m.role as 'user' | 'assistant', content: m.content });
+        }
+      }
       
       chatMessages.push({ role: 'user', content: userMessage });
 
@@ -307,7 +313,11 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
                     <div
                       className={`${msg.role === 'user' ? 'bg-secondary-container text-on-secondary-container rounded-tr-sm' : 'bg-surface-container rounded-tl-sm'} px-5 py-4 rounded-[24px] text-body-lg ${msg.isStreaming ? 'animate-pulse' : ''}`}
                     >
-                      {msg.content}
+                      {msg.isStreaming ? (
+                        msg.content
+                      ) : (
+                        <Markdown content={msg.content} />
+                      )}
                       {msg.isStreaming && (
                         <span className="inline-block w-2 h-4 bg-on-surface-variant ml-1 animate-bounce" />
                       )}

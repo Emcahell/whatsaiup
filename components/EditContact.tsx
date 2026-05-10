@@ -19,6 +19,7 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
   const [provider, setProvider] = useState<AIProvider>("openai");
   const [apiKey, setApiKey] = useState("");
   const [modelIdValue, setModelIdValue] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -40,6 +41,7 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
       setProvider(model.provider);
       setApiKey(model.apiKey);
       setModelIdValue(model.modelId);
+      setSystemPrompt(model.systemPrompt ?? "Keep responses brief and concise.");
       setLoading(false);
     }).catch(() => {
       setError("Error loading model");
@@ -63,6 +65,7 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
         apiKey: apiKey.trim(),
         modelId: modelIdValue,
         temperature: 0.7,
+        systemPrompt,
         createdAt: Date.now(),
       });
       router.back();
@@ -222,6 +225,26 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
               <MaterialSymbol
                 name="expand_more"
                 className="absolute right-4 text-on-surface-variant pointer-events-none"
+              />
+            </div>
+          </div>
+
+          {/* System Prompt */}
+          <div className="space-y-2">
+            <label className="text-label-md font-semibold px-2 text-on-surface-variant">
+              {t('instruction')}
+            </label>
+            <div className="relative flex items-start">
+              <MaterialSymbol
+                name="info"
+                className="absolute left-4 top-5 text-on-surface-variant"
+              />
+              <textarea
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                placeholder={t('instruction_placeholder')}
+                rows={3}
+                className="w-full bg-surface-container-lowest rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 pr-4 py-4 resize-none"
               />
             </div>
           </div>

@@ -17,6 +17,7 @@ export default function NewContactScreen() {
   const [provider, setProvider] = useState<AIProvider>("openai");
   const [apiKey, setApiKey] = useState("");
   const [modelId, setModelId] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("Keep responses brief and concise.");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,6 +52,7 @@ export default function NewContactScreen() {
         apiKey: apiKey.trim(),
         modelId,
         temperature: 0.7,
+        systemPrompt,
         createdAt: Date.now(),
       };
 
@@ -198,7 +200,7 @@ export default function NewContactScreen() {
               <select
                 value={modelId}
                 onChange={(e) => setModelId(e.target.value)}
-                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all pl-12 pr-4 appearance-none cursor-pointer"
+                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 pr-4 appearance-none cursor-pointer"
               >
                 {availableModels.map((model) => (
                   <option key={model.id} value={model.id}>
@@ -209,6 +211,26 @@ export default function NewContactScreen() {
               <MaterialSymbol
                 name="expand_more"
                 className="absolute right-4 text-on-surface-variant pointer-events-none"
+              />
+            </div>
+          </div>
+
+          {/* System Prompt */}
+          <div className="space-y-2">
+            <label className="text-label-md font-semibold px-2 text-on-surface-variant">
+              {t('instruction')}
+            </label>
+            <div className="relative flex items-start">
+              <MaterialSymbol
+                name="info"
+                className="absolute left-4 top-5 text-on-surface-variant"
+              />
+              <textarea
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                placeholder={t('instruction_placeholder')}
+                rows={3}
+                className="w-full bg-surface-container-lowest rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 pr-4 py-4 resize-none"
               />
             </div>
           </div>
