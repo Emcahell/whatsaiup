@@ -1,66 +1,77 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
 import { useLanguage } from "../context/LanguageContext";
+import { getAllModels } from "../lib/db/models";
+import { getConversationsByModelId } from "../lib/db/conversations";
+import { AIModel } from "../lib/types";
+import { PROVIDER_INFO } from "../lib/ai/providers";
 
-const CONTACTS = [
-  {
-    initial: "A",
-    data: [
-      {
-        name: "Alex Rivers",
-        status: "Hey there! I am using Stitch",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-      },
-      {
-        name: "Amara Chen",
-        status: "Design is how it works.",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Amara",
-      },
-    ],
-  },
-  {
-    initial: "B",
-    data: [
-      {
-        name: "Bennett Smith",
-        status: "Coding the future, one line at a time.",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bennett",
-      },
-    ],
-  },
-  {
-    initial: "C",
-    data: [
-      {
-        name: "Claire Vance",
-        status: "Exploring the intersection of art and...",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Claire",
-      },
-      {
-        name: "Caleb Thorne",
-        status: "Always online for coffee chats.",
-        avatar: null,
-      },
-    ],
-  },
-  {
-    initial: "D",
-    data: [
-      {
-        name: "Dara Jenkins",
-        status: "Busy at work. In urgent cases, call me.",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Dara",
-      },
-    ],
-  },
-];
+function getInitial(name: string): string {
+  return name.charAt(0).toUpperCase();
+}
+
+interface ModelWithConversation {
+  model: AIModel;
+  conversationId: string | null;
+}
+
+interface GroupedSection {
+  initial: string;
+  items: ModelWithConversation[];
+}
 
 export default function SelectContactScreen() {
   const router = useRouter();
   const { translations } = useLanguage();
   const t = (key: string) => translations[key as keyof typeof translations] || key;
+
+  const [sections, setSections] = useState<GroupedSection[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadModels();
+  }, []);
+
+  async function loadModels() {
+    try {
+      const allModels = await getAllModels();
+      allModels.sort((a, b) => a.name.localeCompare(b.name));
+
+      const items = await Promise.all(
+        allModels.map(async (model) => {
+          const conversations = await getConversationsByModelId(model.id);
+          const lastConv = conversations.length > 0 ? conversations[conversations.length - 1] : null;
+          return { model, conversationId: lastConv?.id ?? null };
+        })
+      );
+
+      const grouped: Record<string, ModelWithConversation[]> = {};
+      for (const item of items) {
+        const initial = getInitial(item.model.name);
+        if (!grouped[initial]) grouped[initial] = [];
+        grouped[initial].push(item);
+      }
+
+      const result: GroupedSection[] = Object.entries(grouped)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([initial, items]) => ({ initial, items }));
+
+      setSections(result);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSelectModel(item: ModelWithConversation) {
+    if (item.conversationId) {
+      router.push(`/chat/${item.conversationId}?modelId=${item.model.id}`);
+    } else {
+      router.push(`/chat/new?modelId=${item.model.id}`);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col">
@@ -96,53 +107,67 @@ export default function SelectContactScreen() {
 
       {/* Contacts List */}
       <div className="flex-1 px-5 overflow-y-auto">
-        {CONTACTS.map((section) => (
-          <div key={section.initial} className="mb-6">
-            <div className="sticky top-0 bg-surface py-2 text-primary font-bold text-sm">
-              {section.initial}
-            </div>
-
-            <div className="space-y-6 mt-2">
-              {section.data.map((contact, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 group cursor-pointer">
-                  <div className="relative">
-                    {contact.avatar ? (
-                      <img
-                        src={contact.avatar}
-                        alt={contact.name}
-                        className="w-14 h-14 rounded-full bg-surface-container-high object-cover"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant font-bold text-lg">
-                        {contact.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1 border-b border-surface-container pb-4 group-last:border-none">
-                    <h3 className="text-lg font-semibold text-on-surface leading-tight">
-                      {contact.name}
-                    </h3>
-                    <p className="text-sm text-on-surface-variant truncate max-w-[250px]">
-                      {contact.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-on-surface-variant">
+            <MaterialSymbol name="hourglass_empty" className="text-5xl animate-spin" />
           </div>
-        ))}
+        ) : sections.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant">
+            <MaterialSymbol name="inbox" className="text-5xl mb-4" />
+            <p className="text-body-lg">{t('add_first_ai')}</p>
+          </div>
+        ) : (
+          sections.map((section) => (
+            <div key={section.initial} className="mb-6">
+              <div className="sticky top-0 bg-surface py-2 text-primary font-bold text-sm">
+                {section.initial}
+              </div>
+
+              <div className="space-y-6 mt-2">
+                {section.items.map((item) => {
+                  const providerInfo = PROVIDER_INFO[item.model.provider];
+                  return (
+                    <div
+                      key={item.model.id}
+                      onClick={() => handleSelectModel(item)}
+                      className="flex items-center gap-4 group cursor-pointer"
+                    >
+                      <div
+                        className="w-14 h-14 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: providerInfo.color + '20' }}
+                      >
+                        <img
+                          src={providerInfo.logo}
+                          alt={providerInfo.name}
+                          className="w-8 h-8"
+                          style={{ filter: `drop-shadow(0 1px 3px ${providerInfo.color}60)` }}
+                        />
+                      </div>
+
+                      <div className="flex-1 border-b border-surface-container pb-4 group-last:border-none">
+                        <h3 className="text-lg font-semibold text-on-surface leading-tight">
+                          {item.model.name}
+                        </h3>
+                        <p className="text-sm text-on-surface-variant truncate max-w-[250px]">
+                          {item.model.modelId}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Floating Action Button */}
       <div className="fixed bottom-8 right-6">
-        <button className="w-16 h-16 bg-primary-container text-on-primary-container rounded-[20px] flex items-center justify-center shadow-lg active:scale-95 transition-all">
-          <MaterialSymbol name="person_search" className="text-3xl" filled />
+        <button
+          onClick={() => router.push('/new-contact')}
+          className="w-16 h-16 bg-primary-container text-on-primary-container rounded-[20px] flex items-center justify-center shadow-lg active:scale-95 transition-all"
+        >
+          <MaterialSymbol name="person_add" className="text-3xl" filled />
         </button>
       </div>
     </div>
