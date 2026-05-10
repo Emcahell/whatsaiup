@@ -17,14 +17,14 @@ export async function getMessagesByConversationId(conversationId: string): Promi
   });
 }
 
-export async function saveMessage(conversationId: string, role: 'user' | 'assistant', content: string): Promise<Message> {
+export async function saveMessage(conversationId: string, role: 'user' | 'assistant', content: string, timestamp?: number): Promise<Message> {
   const db = await initDB();
   const message: Message = {
     id: generateId(),
     conversationId,
     role,
     content,
-    timestamp: Date.now(),
+    timestamp: timestamp ?? Date.now(),
   };
   
   return new Promise((resolve, reject) => {

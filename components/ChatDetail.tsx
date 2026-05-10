@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
 import { useLanguage } from "../context/LanguageContext";
@@ -10,6 +10,7 @@ import { getMessagesByConversationId, saveMessage } from "../lib/db/messages";
 import { createAIClient, ChatMessage } from "../lib/ai/client";
 import { AIModel, Conversation } from "../lib/types";
 import { PROVIDER_INFO, checkModelAvailability } from "../lib/ai/providers";
+import { formatMessageTime, getDateLabel as getDateLabelTz, getDiffDays } from "../lib/time";
 
 interface MessageItem {
   id: string;
@@ -41,7 +42,6 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
   useEffect(() => {
-    console.log('ChatDetail mounted with params:', chatParams);
     initializeChat();
   }, []);
 
@@ -52,19 +52,14 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   async function initializeChat() {
     try {
       const { id, modelId } = chatParams;
-      console.log('Initializing chat with id:', id, 'modelId:', modelId);
-      
       if (!modelId) {
-        console.error('No modelId provided');
         setError('No model ID provided');
         return;
       }
 
       const modelData = await getModelById(modelId);
-      console.log('Loaded model:', modelData);
       
       if (!modelData) {
-        console.error('Model not found in DB:', modelId);
         setError('Model not found');
         return;
       }
@@ -73,7 +68,6 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
 
       if (id && id !== 'new') {
         const conv = await getConversationById(id);
-        console.log('Loaded conversation:', conv);
         
         if (conv && conv.modelId === modelId) {
           setConversation(conv);
@@ -101,7 +95,6 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   async function handleSendMessage() {
     if (!inputValue.trim() || isLoading || !model) return;
 
-    console.log('=== Starting handleSendMessage ===');
     const userMessage = inputValue.trim();
     setInputValue('');
 
@@ -137,9 +130,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
         throw new Error(availability.message);
       }
 
-      console.log('Creating AI client with:', { provider: model.provider, modelId: model.modelId });
       const client = createAIClient(model.provider, model.apiKey, model.modelId);
-      console.log('Client created:', client.getProvider());
       
       const chatMessages: ChatMessage[] = messages
         .filter(m => !m.isStreaming)
@@ -149,11 +140,11 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
         }));
       
       chatMessages.push({ role: 'user', content: userMessage });
-      console.log('Sending', chatMessages.length, 'messages');
 
       let fullResponse = '';
       const streamingId = streamingMsg.id;
-      
+      const userTimestamp = userMsg.timestamp;
+
       await client.sendMessageStream(chatMessages, (chunk) => {
         fullResponse += chunk;
         setMessages(prev => prev.map(m => 
@@ -162,15 +153,15 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
             : m
         ));
       });
-      console.log('Response complete:', fullResponse.substring(0, 100));
 
-      await saveMessage(convId!, 'user', userMessage);
-      await saveMessage(convId!, 'assistant', fullResponse);
+      const responseTimestamp = Date.now();
+      await saveMessage(convId!, 'user', userMessage, userTimestamp);
+      await saveMessage(convId!, 'assistant', fullResponse, responseTimestamp);
       await updateConversationTimestamp(convId!);
 
       setMessages(prev => prev.map(m => 
         m.id === streamingId 
-          ? { ...m, id: Date.now().toString(), isStreaming: false }
+          ? { ...m, id: Date.now().toString(), isStreaming: false, timestamp: responseTimestamp }
           : m
       ));
     } catch (error) {
@@ -194,8 +185,13 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
     }
   }
 
-  function formatTime(timestamp: number): string {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  function formatMessageTimestamp(timestamp: number): string {
+    const diffDays = getDiffDays(timestamp);
+    const time = formatMessageTime(timestamp);
+
+    if (diffDays === 0) return time;
+    if (diffDays === 1) return `${t('yesterday')} ${time}`;
+    return `${getDateLabelTz(timestamp, t)} ${time}`;
   }
 
   if (loading) {
@@ -292,32 +288,37 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
           </div>
         ) : (
           <>
-            {/* Date Divider */}
-            <div className="flex justify-center">
-              <span className="px-4 py-1 bg-surface-container text-on-surface-variant text-xs font-semibold rounded-full">
-                {t('today')}
-              </span>
-            </div>
+            {messages.map((msg, index) => {
+              const prevMsg = index > 0 ? messages[index - 1] : null;
+              const showDateDivider = !prevMsg || getDiffDays(prevMsg.timestamp) !== getDiffDays(msg.timestamp);
 
-            {/* Messages */}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'} space-y-1`}
-              >
-                <div
-                  className={`${msg.role === 'user' ? 'bg-secondary-container text-on-secondary-container rounded-tr-sm' : 'bg-surface-container rounded-tl-sm'} px-5 py-4 rounded-[24px] text-body-lg ${msg.isStreaming ? 'animate-pulse' : ''}`}
-                >
-                  {msg.content}
-                  {msg.isStreaming && (
-                    <span className="inline-block w-2 h-4 bg-on-surface-variant ml-1 animate-bounce" />
+              return (
+                <Fragment key={msg.id}>
+                  {showDateDivider && (
+                    <div className="flex justify-center">
+                      <span className="px-4 py-1 bg-surface-container text-on-surface-variant text-xs font-semibold rounded-full">
+                        {getDateLabelTz(msg.timestamp, t)}
+                      </span>
+                    </div>
                   )}
-                </div>
-                <span className="text-[11px] text-on-surface-variant px-2 block">
-                  {formatTime(msg.timestamp)}
-                </span>
-              </div>
-            ))}
+                  <div
+                    className={`max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'} space-y-1`}
+                  >
+                    <div
+                      className={`${msg.role === 'user' ? 'bg-secondary-container text-on-secondary-container rounded-tr-sm' : 'bg-surface-container rounded-tl-sm'} px-5 py-4 rounded-[24px] text-body-lg ${msg.isStreaming ? 'animate-pulse' : ''}`}
+                    >
+                      {msg.content}
+                      {msg.isStreaming && (
+                        <span className="inline-block w-2 h-4 bg-on-surface-variant ml-1 animate-bounce" />
+                      )}
+                    </div>
+                    <span className="text-[11px] text-on-surface-variant px-2 block">
+                      {formatMessageTimestamp(msg.timestamp)}
+                    </span>
+                  </div>
+                </Fragment>
+              );
+            })}
             <div ref={messagesEndRef} />
           </>
         )}

@@ -10,6 +10,7 @@ import { getConversationsByModelId } from "../lib/db/conversations";
 import { getMessagesByConversationId } from "../lib/db/messages";
 import { AIModel, Message } from "../lib/types";
 import { PROVIDER_INFO } from "../lib/ai/providers";
+import { formatMessageTime, getDiffDays, formatWeekday, formatShortDate } from "../lib/time";
 
 type FilterType = 'all' | 'unread';
 
@@ -18,27 +19,21 @@ interface ChatItem {
   name: string;
   message: string;
   time: string;
+  lastTime: number;
   unread: number;
   avatar: string | null;
   provider: AIModel['provider'];
   conversationId: string | null;
 }
 
-function formatTime(timestamp: number): string {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const dayInMs = 24 * 60 * 60 * 1000;
+function formatTime(timestamp: number, t: (key: string) => string): string {
+  const diffDays = getDiffDays(timestamp);
+  const time = formatMessageTime(timestamp);
 
-  if (diff < dayInMs) {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } else if (diff < 2 * dayInMs) {
-    return 'Yesterday';
-  } else if (diff < 7 * dayInMs) {
-    const days = Math.floor(diff / dayInMs);
-    return days === 1 ? 'Yesterday' : new Date(timestamp).toLocaleDateString([], { weekday: 'long' });
-  } else {
-    return new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
-  }
+  if (diffDays === 0) return time;
+  if (diffDays === 1) return t('yesterday');
+  if (diffDays < 7) return `${formatWeekday(timestamp)} ${time}`;
+  return `${formatShortDate(timestamp)} ${time}`;
 }
 
 export default function MessagesScreen() {
@@ -89,7 +84,8 @@ export default function MessagesScreen() {
             id: model.id,
             name: model.name,
             message: lastMessage || t('new_conversation'),
-            time: formatTime(lastTime),
+            time: formatTime(lastTime, t),
+            lastTime,
             unread: 0,
             avatar: null,
             provider: model.provider,
@@ -98,6 +94,7 @@ export default function MessagesScreen() {
         })
       );
 
+      chatItems.sort((a, b) => b.lastTime - a.lastTime);
       setChats(chatItems);
     } catch (error) {
       console.error('Error loading data:', error);
