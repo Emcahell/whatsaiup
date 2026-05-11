@@ -3,6 +3,7 @@ import { AIProvider } from '../types';
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  images?: { base64: string; mimeType: string }[];
 }
 
 export abstract class AIClient {
@@ -40,6 +41,19 @@ export class OpenAIClient extends AIClient {
     }
   }
 
+  private formatMessageContent(m: ChatMessage): unknown {
+    const parts: { type: string; text?: string; image_url?: { url: string } }[] = [];
+    if (m.content) parts.push({ type: 'text', text: m.content });
+    if (m.images) {
+      for (const img of m.images) {
+        parts.push({ type: 'image_url', image_url: { url: `data:${img.mimeType};base64,${img.base64}` } });
+      }
+    }
+    if (parts.length === 0) return '';
+    if (parts.length === 1 && parts[0].type === 'text') return parts[0].text!;
+    return parts;
+  }
+
   async sendMessage(messages: ChatMessage[]): Promise<string> {
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
@@ -51,7 +65,7 @@ export class OpenAIClient extends AIClient {
         model: this.modelId,
         messages: messages.map(m => ({
           role: m.role,
-          content: m.content,
+          content: this.formatMessageContent(m),
         })),
       }),
     });
@@ -87,7 +101,7 @@ export class OpenAIClient extends AIClient {
         model: this.modelId,
         messages: messages.map(m => ({
           role: m.role,
-          content: m.content,
+          content: this.formatMessageContent(m),
         })),
         stream: true,
       }),
@@ -161,10 +175,19 @@ export class GoogleAIClient extends AIClient {
     const systemMsg = messages.find(m => m.role === 'system');
     const nonSystemMessages = messages.filter(m => m.role !== 'system');
 
-    const contents = nonSystemMessages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
+    const contents = nonSystemMessages.map(m => {
+      const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [];
+      if (m.content) parts.push({ text: m.content });
+      if (m.images) {
+        for (const img of m.images) {
+          parts.push({ inlineData: { mimeType: img.mimeType, data: img.base64 } });
+        }
+      }
+      return {
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts,
+      };
+    });
 
     const body: Record<string, unknown> = {
       contents,
@@ -225,10 +248,19 @@ export class GoogleAIClient extends AIClient {
     const systemMsg = messages.find(m => m.role === 'system');
     const nonSystemMessages = messages.filter(m => m.role !== 'system');
 
-    const contents = nonSystemMessages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
+    const contents = nonSystemMessages.map(m => {
+      const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [];
+      if (m.content) parts.push({ text: m.content });
+      if (m.images) {
+        for (const img of m.images) {
+          parts.push({ inlineData: { mimeType: img.mimeType, data: img.base64 } });
+        }
+      }
+      return {
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts,
+      };
+    });
 
     const body: Record<string, unknown> = {
       contents,
@@ -342,6 +374,16 @@ export class AnthropicAIClient extends AIClient {
     }
   }
 
+  private formatAnthropicContent(m: ChatMessage): unknown {
+    if (!m.images || m.images.length === 0) return m.content;
+    const blocks: { type: string; text?: string; source?: { type: string; media_type: string; data: string } }[] = [];
+    if (m.content) blocks.push({ type: 'text', text: m.content });
+    for (const img of m.images) {
+      blocks.push({ type: 'image', source: { type: 'base64', media_type: img.mimeType, data: img.base64 } });
+    }
+    return blocks;
+  }
+
   async sendMessage(messages: ChatMessage[]): Promise<string> {
     const systemMsg = messages.find(m => m.role === 'system');
     const nonSystemMessages = messages.filter(m => m.role !== 'system');
@@ -351,7 +393,7 @@ export class AnthropicAIClient extends AIClient {
       max_tokens: 4096,
       messages: nonSystemMessages.map(m => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
-        content: m.content,
+        content: this.formatAnthropicContent(m),
       })),
     };
 
@@ -398,7 +440,7 @@ export class AnthropicAIClient extends AIClient {
       max_tokens: 4096,
       messages: nonSystemMessages.map(m => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
-        content: m.content,
+        content: this.formatAnthropicContent(m),
       })),
       stream: true,
     };
@@ -486,7 +528,14 @@ export class DeepSeekAIClient extends AIClient {
     }
   }
 
+  private checkNoImages(messages: ChatMessage[]) {
+    if (messages.some(m => m.images && m.images.length > 0)) {
+      throw new Error('DeepSeek does not support image inputs');
+    }
+  }
+
   async sendMessage(messages: ChatMessage[]): Promise<string> {
+    this.checkNoImages(messages);
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -523,6 +572,7 @@ export class DeepSeekAIClient extends AIClient {
   }
 
   async sendMessageStream(messages: ChatMessage[], onChunk: (chunk: string) => void): Promise<void> {
+    this.checkNoImages(messages);
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {

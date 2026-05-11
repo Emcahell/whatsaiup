@@ -5,11 +5,11 @@ export interface ModelOption {
   name: string;
 }
 
-export const PROVIDER_INFO: Record<AIProvider, { name: string; icon: string; color: string; logo: string }> = {
-  openai: { name: 'OpenAI', icon: 'smart_toy', color: '#10a37f', logo: '/openai-icon.webp' },
-  google: { name: 'Google', icon: 'smart_toy', color: '#4285f4', logo: '/gemini-icon.webp' },
-  anthropic: { name: 'Anthropic', icon: 'smart_toy', color: '#d4a574', logo: '/anthropic-icon.webp' },
-  deepseek: { name: 'DeepSeek', icon: 'smart_toy', color: '#6b21a8', logo: '/deepseek-icon.webp' },
+export const PROVIDER_INFO: Record<AIProvider, { name: string; icon: string; color: string; logo: string; supportsImages: boolean }> = {
+  openai: { name: 'OpenAI', icon: 'smart_toy', color: '#10a37f', logo: '/openai-icon.webp', supportsImages: true },
+  google: { name: 'Google', icon: 'smart_toy', color: '#4285f4', logo: '/gemini-icon.webp', supportsImages: true },
+  anthropic: { name: 'Anthropic', icon: 'smart_toy', color: '#d4a574', logo: '/anthropic-icon.webp', supportsImages: true },
+  deepseek: { name: 'DeepSeek', icon: 'smart_toy', color: '#6b21a8', logo: '/deepseek-icon.webp', supportsImages: false },
 };
 
 export const MODELS_BY_PROVIDER: Record<AIProvider, ModelOption[]> = {

@@ -19,6 +19,7 @@ interface MessageItem {
   content: string;
   timestamp: number;
   isStreaming?: boolean;
+  image?: string;
 }
 
 interface ChatDetailProps {
@@ -37,9 +38,12 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [attachedImageMime, setAttachedImageMime] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
@@ -83,6 +87,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
             role: m.role,
             content: m.content,
             timestamp: m.timestamp,
+            image: m.image,
           })));
         }
       }
@@ -108,16 +113,20 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   }
 
   async function handleSendMessage() {
-    if (!inputValue.trim() || isLoading || !model) return;
+    if ((!inputValue.trim() && !attachedImage) || isLoading || !model) return;
 
     const userMessage = inputValue.trim();
+    const userImage = attachedImage;
     setInputValue('');
+    setAttachedImage(null);
+    setAttachedImageMime('');
 
     const userMsg: MessageItem = {
       id: Date.now().toString(),
       role: 'user',
       content: userMessage,
       timestamp: Date.now(),
+      image: userImage || undefined,
     };
     setMessages(prev => [...prev, userMsg]);
 
@@ -155,11 +164,21 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
       
       for (const m of messages) {
         if (!m.isStreaming) {
-          chatMessages.push({ role: m.role as 'user' | 'assistant', content: m.content });
+          const cm: ChatMessage = { role: m.role as 'user' | 'assistant', content: m.content };
+          if (m.image) {
+            const [header, base64] = m.image.split(',');
+            cm.images = [{ base64: base64 || m.image, mimeType: header?.match(/:(.*?);/)?.[1] || 'image/jpeg' }];
+          }
+          chatMessages.push(cm);
         }
       }
       
-      chatMessages.push({ role: 'user', content: userMessage });
+      const userCm: ChatMessage = { role: 'user', content: userMessage };
+      if (userImage) {
+        const [header, base64] = userImage.split(',');
+        userCm.images = [{ base64: base64 || userImage, mimeType: header?.match(/:(.*?);/)?.[1] || 'image/jpeg' }];
+      }
+      chatMessages.push(userCm);
 
       let fullResponse = '';
       const streamingId = streamingMsg.id;
@@ -175,7 +194,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
       });
 
       const responseTimestamp = Date.now();
-      await saveMessage(convId!, 'user', userMessage, userTimestamp);
+      await saveMessage(convId!, 'user', userMessage, userTimestamp, userImage || undefined);
       await saveMessage(convId!, 'assistant', fullResponse, responseTimestamp);
       await updateConversationTimestamp(convId!);
 
@@ -327,7 +346,12 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
                     <div
                       className={`${msg.role === 'user' ? 'bg-secondary-container text-on-secondary-container rounded-tr-sm' : 'bg-surface-container rounded-tl-sm'} px-5 py-4 rounded-[24px] text-body-lg ${msg.isStreaming ? 'animate-pulse' : ''}`}
                     >
-                      {msg.isStreaming ? (
+                      {msg.image && (
+                        <img src={msg.image} alt="Uploaded image" className="max-w-full rounded-xl mb-2 max-h-60 object-contain" />
+                      )}
+                      {msg.role === 'user' ? (
+                        msg.content
+                      ) : msg.isStreaming ? (
                         msg.content
                       ) : (
                         <Markdown content={msg.content} />
@@ -350,33 +374,72 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
 
       {/* Message Input Bar */}
       <div className="p-2 bg-surface fixed bottom-0 left-0 right-0">
-        <div className="flex items-end gap-2 bg-surface-container-high px-4 rounded-[24px] overflow-hidden">
-          <button className="p-2 text-on-surface-variant shrink-0 flex items-center justify-center self-center">
-            <MaterialSymbol name="sentiment_satisfied" className="text-2xl" />
-          </button>
+        <div className="flex flex-col bg-surface-container-high rounded-[24px] overflow-hidden">
+          {attachedImage && (
+            <div className="flex items-center gap-2 px-4 pt-3">
+              <div className="relative w-16 h-16 rounded-xl border border-outline-variant">
+                <img src={attachedImage} alt="Attached" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => { setAttachedImage(null); setAttachedImageMime(''); }}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-on-surface text-surface rounded-full flex items-center justify-center shadow"
+                >
+                  <MaterialSymbol name="close" className="text-xs" />
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="flex items-end gap-2 px-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (!providerInfo.supportsImages) {
+                  setError(t('images_not_supported'));
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                  setAttachedImage(reader.result as string);
+                  setAttachedImageMime(file.type);
+                };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 text-on-surface-variant shrink-0 flex items-center justify-center self-center"
+            >
+              <MaterialSymbol name="image" className="text-2xl" />
+            </button>
 
-          <textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={t('message')}
-            disabled={isLoading}
-            rows={1}
-            className="flex-1 min-w-0 bg-transparent border-none focus:outline-none text-body-lg placeholder:text-on-surface-variant resize-none py-3 overflow-y-hidden"
-          />
+            <textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={t('message')}
+              disabled={isLoading}
+              rows={1}
+              className="flex-1 min-w-0 bg-transparent border-none focus:outline-none text-body-lg placeholder:text-on-surface-variant resize-none py-3 overflow-y-hidden"
+            />
 
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
-            className="p-2 shrink-0 flex items-center justify-center disabled:opacity-50 self-center"
-          >
-            {isLoading ? (
-              <MaterialSymbol name="hourglass_empty" className="text-2xl animate-spin" />
-            ) : (
-              <MaterialSymbol name="send" className="text-2xl text-primary" />
-            )}
-          </button>
+            <button
+              onClick={handleSendMessage}
+              disabled={(!inputValue.trim() && !attachedImage) || isLoading}
+              className="p-2 shrink-0 flex items-center justify-center disabled:opacity-50 self-center"
+            >
+              {isLoading ? (
+                <MaterialSymbol name="hourglass_empty" className="text-2xl animate-spin" />
+              ) : (
+                <MaterialSymbol name="send" className="text-2xl text-primary" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

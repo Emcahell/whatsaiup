@@ -17,7 +17,7 @@ export async function getMessagesByConversationId(conversationId: string): Promi
   });
 }
 
-export async function saveMessage(conversationId: string, role: 'user' | 'assistant', content: string, timestamp?: number): Promise<Message> {
+export async function saveMessage(conversationId: string, role: 'user' | 'assistant', content: string, timestamp?: number, image?: string): Promise<Message> {
   const db = await initDB();
   const message: Message = {
     id: generateId(),
@@ -26,6 +26,7 @@ export async function saveMessage(conversationId: string, role: 'user' | 'assist
     content,
     timestamp: timestamp ?? Date.now(),
   };
+  if (image) message.image = image;
   
   return new Promise((resolve, reject) => {
     const tx = db.transaction('messages', 'readwrite');
