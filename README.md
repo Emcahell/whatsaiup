@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Whatsaiup
+
+A multi-provider AI chat client built with Next.js. Chat with models from OpenAI, Google (Gemini), Anthropic (Claude), and DeepSeek through a unified interface.
+
+## Features
+
+- **Multi-provider support**: Add AI models from OpenAI, Google, Anthropic, and DeepSeek
+- **Chat management**: Organize conversations per model with read/unread tracking
+- **Search**: Filter through your AI contacts and conversations
+- **Dark/Light mode**: Theme toggle with a Material You-inspired design system
+- **Internationalization**: Full English and Spanish support
+- **Image input**: Attach images to messages (supported by OpenAI, Google, and Anthropic)
+- **Streaming responses**: Real-time token-by-token streaming for all providers
+- **Local storage**: All data (API keys, conversations, messages) stored locally in IndexedDB
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Add an AI model**: Go to the contacts screen and add a new model with your API key
+2. **Start a conversation**: Select a contact and send a message
+3. **Attach images**: Click the image icon in the input bar to attach images (supported providers only)
+4. **Search**: Use the search icon in the header to filter contacts and conversations
+5. **Switch language**: Open the menu to toggle between English and Spanish
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+- `app/` — Next.js App Router pages
+- `components/` — React components
+- `context/` — Theme and language context providers
+- `lib/ai/` — AI provider clients (OpenAI, Google, Anthropic, DeepSeek)
+- `lib/db/` — IndexedDB operations (models, conversations, messages)
+- `lib/` — Shared types, time utilities, and provider configurations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Next.js](https://nextjs.org) — React framework
+- [Tailwind CSS](https://tailwindcss.com) — Styling
+- [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) — Client-side storage
+- [Material Symbols](https://fonts.google.com/icons) — Icons
 
-## Deploy on Vercel
+## Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Contributions are welcome! Whether it's improving existing features, fixing a bug, adding new functionality, or integrating a new AI provider, feel free to open an issue or submit a pull request.
