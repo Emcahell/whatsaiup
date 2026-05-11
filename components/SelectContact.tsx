@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
 import { useLanguage } from "../context/LanguageContext";
@@ -30,6 +30,8 @@ export default function SelectContactScreen() {
 
   const [sections, setSections] = useState<GroupedSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     loadModels();
@@ -65,6 +67,19 @@ export default function SelectContactScreen() {
     }
   }
 
+  const filteredSections = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return sections;
+    return sections
+      .map(section => ({
+        ...section,
+        items: section.items.filter(item =>
+          item.model.name.toLowerCase().includes(q)
+        ),
+      }))
+      .filter(section => section.items.length > 0);
+  }, [sections, searchQuery]);
+
   function handleSelectModel(item: ModelWithConversation) {
     if (item.conversationId) {
       router.push(`/chat/${item.conversationId}?modelId=${item.model.id}`);
@@ -76,23 +91,47 @@ export default function SelectContactScreen() {
   return (
     <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col">
       {/* Header */}
-      <header className="px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center">
-            <MaterialSymbol name="arrow_back" className="text-2xl" />
-          </button>
-          <h1 className="text-[24px] font-medium font-sans text-primary tracking-tight">
-            {t('select_contact')}
-          </h1>
-        </div>
-        <div className="flex items-center gap-1">
-          <button className="p-2 text-on-surface-variant flex items-center justify-center">
-            <MaterialSymbol name="search" className="text-2xl" />
-          </button>
-        </div>
+      <header className="px-5 py-4 flex items-center justify-between gap-2">
+        {showSearch ? (
+          <div className="flex items-center gap-2 flex-1">
+            <button
+              onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+              className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center"
+            >
+              <MaterialSymbol name="arrow_back" className="text-2xl" />
+            </button>
+            <input
+              autoFocus
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder={t('search')}
+              className="flex-1 bg-surface-variant text-[16px] font-semibold text-on-surface outline-none placeholder:text-on-surface-variant/50 px-4 py-2 rounded-full"
+            />
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-4">
+              <button onClick={() => router.back()} className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center">
+                <MaterialSymbol name="arrow_back" className="text-2xl" />
+              </button>
+              <h1 className="text-[24px] font-medium font-sans text-primary tracking-tight">
+                {t('select_contact')}
+              </h1>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowSearch(true)}
+                className="p-2 text-on-surface-variant flex items-center justify-center"
+              >
+                <MaterialSymbol name="search" className="text-2xl" />
+              </button>
+            </div>
+          </>
+        )}
       </header>
 
-        {/* Action List */}
+      {/* Action List */}
         <div className="px-5 py-4">
           <button
             onClick={() => router.push('/new-contact')}
@@ -111,13 +150,17 @@ export default function SelectContactScreen() {
           <div className="flex items-center justify-center py-20 text-on-surface-variant">
             <MaterialSymbol name="hourglass_empty" className="text-5xl animate-spin" />
           </div>
-        ) : sections.length === 0 ? (
+        ) : filteredSections.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant">
             <MaterialSymbol name="inbox" className="text-5xl mb-4" />
-            <p className="text-body-lg">{t('add_first_ai')}</p>
+            <p className="text-body-lg">
+              {searchQuery
+                ? t('no_search_results').replace('{name}', searchQuery)
+                : t('add_first_ai')}
+            </p>
           </div>
         ) : (
-          sections.map((section) => (
+          filteredSections.map((section) => (
             <div key={section.initial} className="mb-6">
               <div className="sticky top-0 bg-surface py-2 text-primary font-bold text-sm">
                 {section.initial}

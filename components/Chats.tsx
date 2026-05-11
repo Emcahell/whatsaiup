@@ -45,6 +45,8 @@ export default function MessagesScreen() {
   const [models, setModels] = useState<AIModel[]>([]);
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
@@ -104,11 +106,16 @@ export default function MessagesScreen() {
   }
 
   const filteredChats = useMemo(() => {
-    if (activeFilter === 'unread') {
-      return chats.filter(chat => chat.unread > 0);
+    const q = searchQuery.toLowerCase().trim();
+    let result = chats;
+    if (q) {
+      result = result.filter(chat => chat.name.toLowerCase().includes(q));
     }
-    return chats;
-  }, [activeFilter, chats]);
+    if (activeFilter === 'unread') {
+      result = result.filter(chat => chat.unread > 0);
+    }
+    return result;
+  }, [activeFilter, chats, searchQuery]);
 
   const filters = [
     { key: 'all' as FilterType, label: t('all_chats') },
@@ -126,62 +133,86 @@ export default function MessagesScreen() {
   return (
     <div className="min-h-screen bg-surface font-sans text-on-surface flex flex-col">
       {/* Header */}
-      <header className="px-5 py-4 flex items-center justify-between">
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center"
-          >
-            <MaterialSymbol name="menu" className="text-2xl" />
-          </button>
+      <header className="px-5 py-4 flex items-center justify-between gap-2">
+        {showSearch ? (
+          <div className="flex items-center gap-2 flex-1">
+            <button
+              onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+              className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center"
+            >
+              <MaterialSymbol name="arrow_back" className="text-2xl" />
+            </button>
+            <input
+              autoFocus
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder={t('search')}
+              className="flex-1 bg-surface-variant text-[16px] font-semibold text-on-surface outline-none placeholder:text-on-surface-variant/50 px-4 py-2 rounded-full"
+            />
+          </div>
+        ) : (
+          <>
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-2 -ml-2 text-on-surface-variant flex items-center justify-center"
+              >
+                <MaterialSymbol name="menu" className="text-2xl" />
+              </button>
 
-          {showMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowMenu(false)}
-              />
-              <div className="absolute left-0 top-full mt-2 bg-surface-container-high rounded-2xl shadow-lg py-2 min-w-[200px] z-20 overflow-hidden">
-                <button
-                  onClick={() => {
-                    toggleTheme();
-                    setShowMenu(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-on-surface hover:bg-surface-container transition-colors"
-                >
-                  <MaterialSymbol
-                    name={theme === "dark" ? "light_mode" : "dark_mode"}
-                    className="text-xl"
+              {showMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowMenu(false)}
                   />
-                  <span className="font-medium">
-                    {theme === "dark" ? t('light_mode') : t('dark_mode')}
-                  </span>
-                </button>
+                  <div className="absolute left-0 top-full mt-2 bg-surface-container-high rounded-2xl shadow-lg py-2 min-w-[200px] z-20 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-on-surface hover:bg-surface-container transition-colors"
+                    >
+                      <MaterialSymbol
+                        name={theme === "dark" ? "light_mode" : "dark_mode"}
+                        className="text-xl"
+                      />
+                      <span className="font-medium">
+                        {theme === "dark" ? t('light_mode') : t('dark_mode')}
+                      </span>
+                    </button>
 
-                <button
-                  onClick={() => {
-                    toggleLanguage();
-                    setShowMenu(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-on-surface hover:bg-surface-container transition-colors"
-                >
-                  <MaterialSymbol name="translate" className="text-xl" />
-                  <span className="font-medium">
-                    {language === "en" ? "Español" : "English"}
-                  </span>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+                    <button
+                      onClick={() => {
+                        toggleLanguage();
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-on-surface hover:bg-surface-container transition-colors"
+                    >
+                      <MaterialSymbol name="translate" className="text-xl" />
+                      <span className="font-medium">
+                        {language === "en" ? "Español" : "English"}
+                      </span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
-        <h1 className="text-[24px] font-semibold font-sans text-primary tracking-tight">
-          {t('whatsaiup')}
-        </h1>
+            <h1 className="text-[24px] font-semibold font-sans text-primary tracking-tight">
+              {t('whatsaiup')}
+            </h1>
 
-        <button className="p-2 -mr-2 text-on-surface-variant flex items-center justify-center">
-          <MaterialSymbol name="search" className="text-2xl" />
-        </button>
+            <button
+              onClick={() => setShowSearch(true)}
+              className="p-2 -mr-2 text-on-surface-variant flex items-center justify-center"
+            >
+              <MaterialSymbol name="search" className="text-2xl" />
+            </button>
+          </>
+        )}
       </header>
 
       {/* Categories / Filters */}
@@ -211,7 +242,13 @@ export default function MessagesScreen() {
         ) : filteredChats.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant">
             <MaterialSymbol name="inbox" className="text-5xl mb-4" />
-            <p className="text-body-lg">{models.length === 0 ? t('add_first_ai') : t('no_unread_messages')}</p>
+            <p className="text-body-lg">
+              {models.length === 0
+                ? t('no_chats')
+                : searchQuery
+                  ? t('no_search_results').replace('{name}', searchQuery)
+                  : t('no_unread_messages')}
+            </p>
           </div>
         ) : (
           filteredChats.map((chat) => {

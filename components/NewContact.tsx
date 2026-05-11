@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
+import ModelSelect from "./ui/ModelSelect";
 import { useLanguage } from "../context/LanguageContext";
 import { AIProvider } from "../lib/types";
 import { PROVIDER_INFO, getProviderModels } from "../lib/ai/providers";
@@ -17,7 +18,7 @@ export default function NewContactScreen() {
   const [provider, setProvider] = useState<AIProvider>("openai");
   const [apiKey, setApiKey] = useState("");
   const [modelId, setModelId] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState("Keep responses brief and concise.");
+  const [systemPrompt, setSystemPrompt] = useState(t('default_instruction'));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -192,27 +193,11 @@ export default function NewContactScreen() {
             <label className="text-label-md font-semibold px-2 text-on-surface-variant">
               {t('model')}
             </label>
-            <div className="relative flex items-center">
-              <MaterialSymbol
-                name="smart_toy"
-                className="absolute left-4 text-on-surface-variant"
-              />
-              <select
-                value={modelId}
-                onChange={(e) => setModelId(e.target.value)}
-                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 pr-4 appearance-none cursor-pointer"
-              >
-                {availableModels.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </select>
-              <MaterialSymbol
-                name="expand_more"
-                className="absolute right-4 text-on-surface-variant pointer-events-none"
-              />
-            </div>
+            <ModelSelect
+              value={modelId}
+              options={availableModels}
+              onChange={setModelId}
+            />
           </div>
 
           {/* System Prompt */}

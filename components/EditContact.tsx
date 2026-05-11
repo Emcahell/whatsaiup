@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
+import ModelSelect from "./ui/ModelSelect";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import { useLanguage } from "../context/LanguageContext";
 import { getModelById, saveModel, deleteModel } from "../lib/db/models";
@@ -208,25 +209,11 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
             <label className="text-label-md font-semibold px-2 text-on-surface-variant">
               {t('model')}
             </label>
-            <div className="relative flex items-center">
-              <MaterialSymbol
-                name="smart_toy"
-                className="absolute left-4 text-on-surface-variant"
-              />
-              <select
-                value={modelIdValue}
-                onChange={(e) => setModelIdValue(e.target.value)}
-                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all pl-12 pr-4 appearance-none cursor-pointer"
-              >
-                {availableModels.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-              <MaterialSymbol
-                name="expand_more"
-                className="absolute right-4 text-on-surface-variant pointer-events-none"
-              />
-            </div>
+            <ModelSelect
+              value={modelIdValue}
+              options={availableModels}
+              onChange={setModelIdValue}
+            />
           </div>
 
           {/* System Prompt */}

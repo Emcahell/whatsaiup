@@ -39,6 +39,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   const [error, setError] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
@@ -49,6 +50,10 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue]);
 
   async function initializeChat() {
     try {
@@ -91,6 +96,15 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
 
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function adjustTextareaHeight() {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    const maxHeight = 24 * 5 + 24;
+    ta.style.height = Math.min(ta.scrollHeight, maxHeight) + 'px';
+    ta.style.overflowY = ta.scrollHeight > maxHeight ? 'auto' : 'hidden';
   }
 
   async function handleSendMessage() {
@@ -336,25 +350,26 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
 
       {/* Message Input Bar */}
       <div className="p-2 bg-surface fixed bottom-0 left-0 right-0">
-        <div className="flex items-center gap-2 bg-surface-container-high h-16 px-4 rounded-full overflow-hidden">
-          <button className="p-2 text-on-surface-variant shrink-0 flex items-center justify-center">
+        <div className="flex items-end gap-2 bg-surface-container-high px-4 rounded-[24px] overflow-hidden">
+          <button className="p-2 text-on-surface-variant shrink-0 flex items-center justify-center self-center">
             <MaterialSymbol name="sentiment_satisfied" className="text-2xl" />
           </button>
 
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={t('message')}
             disabled={isLoading}
-            className="flex-1 min-w-0 bg-transparent border-none focus:outline-none text-body-lg placeholder:text-on-surface-variant"
+            rows={1}
+            className="flex-1 min-w-0 bg-transparent border-none focus:outline-none text-body-lg placeholder:text-on-surface-variant resize-none py-3 overflow-y-hidden"
           />
 
           <button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isLoading}
-            className="p-2 shrink-0 flex items-center justify-center disabled:opacity-50"
+            className="p-2 shrink-0 flex items-center justify-center disabled:opacity-50 self-center"
           >
             {isLoading ? (
               <MaterialSymbol name="hourglass_empty" className="text-2xl animate-spin" />
