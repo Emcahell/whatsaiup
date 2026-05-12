@@ -69,7 +69,7 @@ export default function SelectContactScreen() {
     }
   }
 
-  const DEMO_API_KEY = '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';
+  const DEMO_API_KEY = process.env.NEXT_PUBLIC_DEMO_API_KEY || '';
 
   async function handleTryDemo() {
     const model = {
