@@ -10,9 +10,10 @@ interface ModelSelectProps {
   value: string;
   options: ModelOption[];
   onChange: (value: string) => void;
+  disabled?: boolean;
 }
 
-export default function ModelSelect({ value, options, onChange }: ModelSelectProps) {
+export default function ModelSelect({ value, options, onChange, disabled }: ModelSelectProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -32,8 +33,8 @@ export default function ModelSelect({ value, options, onChange }: ModelSelectPro
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg flex items-center border-b-2 border-transparent focus:border-primary transition-all pl-12 pr-12 cursor-pointer text-left"
+        onClick={() => !disabled && setOpen(!open)}
+        className={`w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg flex items-center border-b-2 border-transparent focus:border-primary transition-all pl-12 pr-12 text-left ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span className={selected ? "text-on-surface" : "text-outline-variant"}>
           {selected?.name || "Select model"}

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
 import { useLanguage } from "../context/LanguageContext";
-import { getAllModels } from "../lib/db/models";
+import { getAllModels, saveModel, generateId } from "../lib/db/models";
 import { getConversationsByModelId } from "../lib/db/conversations";
 import { AIModel } from "../lib/types";
 import { PROVIDER_INFO } from "../lib/ai/providers";
@@ -30,6 +30,7 @@ export default function SelectContactScreen() {
 
   const [sections, setSections] = useState<GroupedSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasDemo, setHasDemo] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
@@ -40,6 +41,7 @@ export default function SelectContactScreen() {
   async function loadModels() {
     try {
       const allModels = await getAllModels();
+      setHasDemo(allModels.some(m => m.isDemo));
       allModels.sort((a, b) => a.name.localeCompare(b.name));
 
       const items = await Promise.all(
@@ -65,6 +67,24 @@ export default function SelectContactScreen() {
     } finally {
       setLoading(false);
     }
+  }
+
+  const DEMO_API_KEY = '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';
+
+  async function handleTryDemo() {
+    const model = {
+      id: generateId(),
+      name: 'Whatsaiup',
+      provider: 'whatsaiup' as const,
+      apiKey: DEMO_API_KEY,
+      modelId: 'groq/compound-mini',
+      temperature: 0.7,
+      systemPrompt: 'Keep responses brief and concise.',
+      createdAt: Date.now(),
+      isDemo: true,
+    };
+    await saveModel(model);
+    router.push(`/chat/new?modelId=${model.id}`);
   }
 
   const filteredSections = useMemo(() => {
@@ -132,7 +152,7 @@ export default function SelectContactScreen() {
       </header>
 
       {/* Action List */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 space-y-1">
           <button
             onClick={() => router.push('/new-contact')}
             className="flex items-center gap-4 w-full py-3 active:bg-surface-container transition-colors group"
@@ -142,6 +162,20 @@ export default function SelectContactScreen() {
             </div>
             <span className="text-lg font-medium">{t('new_contact')}</span>
           </button>
+          {!hasDemo && (
+            <button
+              onClick={handleTryDemo}
+              className="flex items-center text-start gap-4 w-full py-3 active:bg-surface-container transition-colors group"
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: '#384b3d20' }}>
+                <img src="/logo.webp" alt="Whatsaiup" className="w-10 h-10" />
+              </div>
+              <div>
+                <span className="text-lg font-medium block">Whatsaiup</span>
+                <span className="text-sm text-on-surface-variant">{t('try_without_key')}</span>
+              </div>
+            </button>
+          )}
         </div>
 
       {/* Contacts List */}

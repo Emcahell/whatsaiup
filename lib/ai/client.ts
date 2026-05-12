@@ -791,6 +791,8 @@ export function createAIClient(provider: AIProvider, apiKey: string, modelId: st
       return new DeepSeekAIClient(apiKey, modelId);
     case 'groq':
       return new GroqClient(apiKey, modelId);
+    case 'whatsaiup':
+      return new GroqClient(apiKey, modelId);
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }

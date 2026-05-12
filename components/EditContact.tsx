@@ -16,6 +16,7 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
   const [loading, setLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
   const [name, setName] = useState("");
   const [provider, setProvider] = useState<AIProvider>("openai");
   const [apiKey, setApiKey] = useState("");
@@ -38,11 +39,12 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
         setLoading(false);
         return;
       }
+      setIsDemo(!!model.isDemo);
       setName(model.name);
       setProvider(model.provider);
       setApiKey(model.apiKey);
       setModelIdValue(model.modelId);
-      setSystemPrompt(model.systemPrompt ?? "Keep responses brief and concise.");
+      setSystemPrompt(model.systemPrompt ?? t('default_instruction'));
       setLoading(false);
     }).catch(() => {
       setError("Error loading model");
@@ -124,13 +126,15 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
             {t('edit_contact')}
           </h1>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="px-4 py-2 text-primary font-semibold text-lg hover:bg-primary/5 rounded-full transition-colors disabled:opacity-50"
-        >
-          {isSaving ? t('saving') : t('save')}
-        </button>
+        {!isDemo && (
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-4 py-2 text-primary font-semibold text-lg hover:bg-primary/5 rounded-full transition-colors disabled:opacity-50"
+          >
+            {isSaving ? t('saving') : t('save')}
+          </button>
+        )}
       </header>
 
       <div className="flex-1 overflow-y-auto px-5 py-6 space-y-8">
@@ -163,7 +167,9 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(""); }}
                 placeholder={t('alias_placeholder')}
-                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12"
+                disabled={isDemo}
+                readOnly={isDemo}
+                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -199,7 +205,9 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
                 value={apiKey}
                 onChange={(e) => { setApiKey(e.target.value); setError(""); }}
                 placeholder={t('api_key_placeholder')}
-                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12"
+                disabled={isDemo}
+                readOnly={isDemo}
+                className="w-full bg-surface-container-lowest h-16 rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -213,6 +221,7 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
               value={modelIdValue}
               options={availableModels}
               onChange={setModelIdValue}
+              disabled={isDemo}
             />
           </div>
 
@@ -230,8 +239,10 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 placeholder={t('instruction_placeholder')}
+                disabled={isDemo}
+                readOnly={isDemo}
                 rows={3}
-                className="w-full bg-surface-container-lowest rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 pr-4 py-4 resize-none"
+                className="w-full bg-surface-container-lowest rounded-[16px] text-body-lg focus:outline-none border-b-2 border-transparent focus:border-primary transition-all placeholder:text-outline-variant pl-12 pr-4 py-4 resize-none disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -244,15 +255,17 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
         </div>
 
         {/* Delete Action */}
-        <div className="py-8 flex justify-center">
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-2 text-error font-semibold py-2 px-6 hover:bg-error/5 rounded-full transition-colors"
-          >
-            <MaterialSymbol name="delete" className="text-2xl" />
-            {t('delete_contact')}
-          </button>
-        </div>
+        {!isDemo && (
+          <div className="py-8 flex justify-center">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-2 text-error font-semibold py-2 px-6 hover:bg-error/5 rounded-full transition-colors"
+            >
+              <MaterialSymbol name="delete" className="text-2xl" />
+              {t('delete_contact')}
+            </button>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

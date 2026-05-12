@@ -11,6 +11,7 @@ export const PROVIDER_INFO: Record<AIProvider, { name: string; icon: string; col
   anthropic: { name: 'Anthropic', icon: 'smart_toy', color: '#d4a574', logo: '/anthropic-icon.webp', supportsImages: true },
   deepseek: { name: 'DeepSeek', icon: 'smart_toy', color: '#6b21a8', logo: '/deepseek-icon.webp', supportsImages: false },
   groq: { name: 'Groq', icon: 'smart_toy', color: '#f97316', logo: '/groq-icon.webp', supportsImages: false },
+  whatsaiup: { name: 'Whatsaiup', icon: 'smart_toy', color: '#384b3d', logo: '/logo.webp', supportsImages: false },
 };
 
 export const MODELS_BY_PROVIDER: Record<AIProvider, ModelOption[]> = {
@@ -57,6 +58,9 @@ export const MODELS_BY_PROVIDER: Record<AIProvider, ModelOption[]> = {
     { id: 'qwen/qwen3-32b', name: 'Qwen 3 32B' },
     { id: 'whisper-large-v3', name: 'Whisper Large V3' },
     { id: 'whisper-large-v3-turbo', name: 'Whisper Large V3 Turbo' },
+  ],
+  whatsaiup: [
+    { id: 'groq/compound-mini', name: 'Groq Compound Mini' },
   ],
 };
 

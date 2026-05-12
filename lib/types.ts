@@ -1,4 +1,4 @@
-export type AIProvider = 'openai' | 'google' | 'anthropic' | 'deepseek' | 'groq';
+export type AIProvider = 'openai' | 'google' | 'anthropic' | 'deepseek' | 'groq' | 'whatsaiup';
 
 export interface AIModel {
   id: string;
@@ -9,6 +9,7 @@ export interface AIModel {
   temperature: number;
   systemPrompt?: string;
   createdAt: number;
+  isDemo?: boolean;
 }
 
 export interface Conversation {
