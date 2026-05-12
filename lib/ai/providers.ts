@@ -10,6 +10,7 @@ export const PROVIDER_INFO: Record<AIProvider, { name: string; icon: string; col
   google: { name: 'Google', icon: 'smart_toy', color: '#4285f4', logo: '/gemini-icon.webp', supportsImages: true },
   anthropic: { name: 'Anthropic', icon: 'smart_toy', color: '#d4a574', logo: '/anthropic-icon.webp', supportsImages: true },
   deepseek: { name: 'DeepSeek', icon: 'smart_toy', color: '#6b21a8', logo: '/deepseek-icon.webp', supportsImages: false },
+  groq: { name: 'Groq', icon: 'smart_toy', color: '#f97316', logo: '/groq-icon.webp', supportsImages: false },
 };
 
 export const MODELS_BY_PROVIDER: Record<AIProvider, ModelOption[]> = {
@@ -41,6 +42,21 @@ export const MODELS_BY_PROVIDER: Record<AIProvider, ModelOption[]> = {
   deepseek: [
     { id: 'deepseek-chat', name: 'DeepSeek Chat' },
     { id: 'deepseek-coder', name: 'DeepSeek Coder' },
+  ],
+  groq: [
+    { id: 'allam-2-7b', name: 'Allam 2 7B' },
+    { id: 'groq/compound', name: 'Groq Compound' },
+    { id: 'groq/compound-mini', name: 'Groq Compound Mini' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant' },
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile' },
+    { id: 'meta-llama/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout 17B' },
+    { id: 'meta-llama/llama-prompt-guard-2-22m', name: 'Llama Prompt Guard' },
+    { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B' },
+    { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B' },
+    { id: 'openai/gpt-oss-safeguard-20b', name: 'GPT OSS Safeguard' },
+    { id: 'qwen/qwen3-32b', name: 'Qwen 3 32B' },
+    { id: 'whisper-large-v3', name: 'Whisper Large V3' },
+    { id: 'whisper-large-v3-turbo', name: 'Whisper Large V3 Turbo' },
   ],
 };
 

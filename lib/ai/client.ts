@@ -637,6 +637,148 @@ export class DeepSeekAIClient extends AIClient {
   }
 }
 
+export class GroqClient extends AIClient {
+  private baseUrl = 'https://api.groq.com/openai/v1';
+
+  getProvider(): AIProvider {
+    return 'groq';
+  }
+
+  async validateApiKey(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/models`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  private checkNoImages(messages: ChatMessage[]) {
+    if (messages.some(m => m.images && m.images.length > 0)) {
+      throw new Error('Groq does not support image inputs');
+    }
+  }
+
+  private formatMessageContent(m: ChatMessage): unknown {
+    const parts: { type: string; text?: string; image_url?: { url: string } }[] = [];
+    if (m.content) parts.push({ type: 'text', text: m.content });
+    if (m.images) {
+      for (const img of m.images) {
+        parts.push({ type: 'image_url', image_url: { url: `data:${img.mimeType};base64,${img.base64}` } });
+      }
+    }
+    if (parts.length === 0) return '';
+    if (parts.length === 1 && parts[0].type === 'text') return parts[0].text!;
+    return parts;
+  }
+
+  async sendMessage(messages: ChatMessage[]): Promise<string> {
+    this.checkNoImages(messages);
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.modelId,
+        messages: messages.map(m => ({
+          role: m.role,
+          content: this.formatMessageContent(m),
+        })),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      let errorMsg = `HTTP ${response.status}`;
+      try {
+        const errorBody = JSON.parse(errorText);
+        console.error('[Groq Error]', errorBody);
+        if (errorBody.error?.message) errorMsg = errorBody.error.message;
+      } catch {
+        if (errorText) {
+          console.error('[Groq Error body]', errorText);
+          errorMsg = `HTTP ${response.status}: ${errorText.slice(0, 200)}`;
+        }
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
+  }
+
+  async sendMessageStream(messages: ChatMessage[], onChunk: (chunk: string) => void): Promise<void> {
+    this.checkNoImages(messages);
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.modelId,
+        messages: messages.map(m => ({
+          role: m.role,
+          content: this.formatMessageContent(m),
+        })),
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      let errorMsg = `HTTP ${response.status}`;
+      try {
+        const errorBody = JSON.parse(errorText);
+        console.error('[Groq Error]', errorBody);
+        if (errorBody.error?.message) errorMsg = errorBody.error.message;
+      } catch {
+        if (errorText) {
+          console.error('[Groq Error body]', errorText);
+          errorMsg = `HTTP ${response.status}: ${errorText.slice(0, 200)}`;
+        }
+      }
+      throw new Error(errorMsg);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No response body');
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') return;
+          
+          try {
+            const json = JSON.parse(data);
+            const content = json.choices?.[0]?.delta?.content;
+            if (content) onChunk(content);
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+    }
+  }
+}
+
 export function createAIClient(provider: AIProvider, apiKey: string, modelId: string): AIClient {
   switch (provider) {
     case 'openai':
@@ -647,6 +789,8 @@ export function createAIClient(provider: AIProvider, apiKey: string, modelId: st
       return new AnthropicAIClient(apiKey, modelId);
     case 'deepseek':
       return new DeepSeekAIClient(apiKey, modelId);
+    case 'groq':
+      return new GroqClient(apiKey, modelId);
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }

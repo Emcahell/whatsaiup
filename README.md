@@ -1,6 +1,6 @@
 # Whatsaiup
 
-A multi-provider AI chat client built with Next.js. Chat with models from OpenAI, Google (Gemini), Anthropic (Claude), and DeepSeek through a unified interface.
+A multi-provider AI chat client built with Next.js. Chat with models from OpenAI, Google (Gemini), Anthropic (Claude), DeepSeek, and Groq through a unified interface.
 
 ## Features
 
