@@ -38,6 +38,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [attachedImageMime, setAttachedImageMime] = useState('');
 
@@ -374,6 +375,14 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
 
       {/* Message Input Bar */}
       <div className="p-2 bg-surface fixed bottom-0 left-0 right-0">
+        {toast && (
+          <div className="flex items-center gap-2 px-4 py-2 mb-1 mx-2 bg-error-container text-on-error-container text-sm rounded-xl">
+            <span className="flex-1">{toast}</span>
+            <button onClick={() => setToast(null)} className="p-0.5 shrink-0">
+              <MaterialSymbol name="close" className="text-lg" />
+            </button>
+          </div>
+        )}
         <div className="flex flex-col bg-surface-container-high rounded-[24px] overflow-hidden">
           {attachedImage && (
             <div className="flex items-center gap-2 px-4 pt-3">
@@ -398,7 +407,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 if (!providerInfo.supportsImages) {
-                  setError(t('images_not_supported'));
+                  setToast(t('images_not_supported'));
                   return;
                 }
                 const reader = new FileReader();
