@@ -34,11 +34,7 @@ export default function SelectContactScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
-  useEffect(() => {
-    loadModels();
-  }, []);
-
-  async function loadModels() {
+  const loadModels = async () => {
     try {
       const allModels = await getAllModels();
       setHasDemo(allModels.some(m => m.isDemo));
@@ -68,6 +64,10 @@ export default function SelectContactScreen() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    loadModels();
+  }, []);
 
   const DEMO_API_KEY = process.env.NEXT_PUBLIC_DEMO_API_KEY || '';
 

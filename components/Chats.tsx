@@ -8,7 +8,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { getAllModels } from "../lib/db/models";
 import { getConversationsByModelId } from "../lib/db/conversations";
 import { getMessagesByConversationId } from "../lib/db/messages";
-import { AIModel, Message } from "../lib/types";
+import { AIModel } from "../lib/types";
 import { PROVIDER_INFO } from "../lib/ai/providers";
 import { formatMessageTime, getDiffDays, formatWeekday, formatShortDate } from "../lib/time";
 
@@ -50,18 +50,13 @@ export default function MessagesScreen() {
 
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
+  const loadData = async () => {
     try {
       const allModels = await getAllModels();
       setModels(allModels);
 
       const chatItems: ChatItem[] = await Promise.all(
         allModels.map(async (model) => {
-          const providerInfo = PROVIDER_INFO[model.provider];
           const conversations = await getConversationsByModelId(model.id);
           
           let lastMessage = '';
@@ -104,6 +99,11 @@ export default function MessagesScreen() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    Promise.resolve().then(() => loadData());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredChats = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();

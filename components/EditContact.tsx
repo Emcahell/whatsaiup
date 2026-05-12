@@ -15,7 +15,7 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
   const { translations } = useLanguage();
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !!modelId);
   const [isDemo, setIsDemo] = useState(false);
   const [name, setName] = useState("");
   const [provider, setProvider] = useState<AIProvider>("openai");
@@ -23,15 +23,11 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
   const [modelIdValue, setModelIdValue] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => modelId ? "" : "No model ID provided");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    if (!modelId) {
-      setError("No model ID provided");
-      setLoading(false);
-      return;
-    }
+    if (!modelId) return;
 
     getModelById(modelId).then((model) => {
       if (!model) {
@@ -50,6 +46,7 @@ export default function EditContactScreen({ modelId }: { modelId?: string }) {
       setError("Error loading model");
       setLoading(false);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelId]);
 
   const availableModels = getProviderModels(provider);

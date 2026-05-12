@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaterialSymbol } from "./ui/MaterialSymbols";
 import ModelSelect from "./ui/ModelSelect";
@@ -17,17 +17,18 @@ export default function NewContactScreen() {
   const [name, setName] = useState("");
   const [provider, setProvider] = useState<AIProvider>("openai");
   const [apiKey, setApiKey] = useState("");
-  const [modelId, setModelId] = useState("");
+  const [modelId, setModelId] = useState(() => getProviderModels("openai")[0]?.id || "");
   const [systemPrompt, setSystemPrompt] = useState(t('default_instruction'));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const models = getProviderModels(provider);
+  const handleProviderChange = (newProvider: AIProvider) => {
+    setProvider(newProvider);
+    const models = getProviderModels(newProvider);
     if (models.length > 0) {
       setModelId(models[0].id);
     }
-  }, [provider]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,14 +60,15 @@ export default function NewContactScreen() {
 
       await saveModel(model);
       router.push('/');
-    } catch (err) {
+    } catch {
       setError(t('error_saving_model'));
     } finally {
       setIsSaving(false);
     }
   };
 
-  const providers = Object.entries(PROVIDER_INFO) as [AIProvider, typeof PROVIDER_INFO[AIProvider]][];
+  const providers = (Object.entries(PROVIDER_INFO) as [AIProvider, typeof PROVIDER_INFO[AIProvider]][])
+    .filter(([key]) => key !== 'whatsaiup');
   const availableModels = getProviderModels(provider);
 
   return (
@@ -141,7 +143,7 @@ export default function NewContactScreen() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setProvider(key)}
+                  onClick={() => handleProviderChange(key)}
                   className={`p-4 rounded-2xl border-2 transition-all ${
                     provider === key
                       ? 'border-primary bg-primary/5'

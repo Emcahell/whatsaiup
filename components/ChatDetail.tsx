@@ -40,7 +40,6 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
-  const [attachedImageMime, setAttachedImageMime] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -48,19 +47,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
   
   const t = (key: string) => translations[key as keyof typeof translations] || key;
 
-  useEffect(() => {
-    initializeChat();
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [inputValue]);
-
-  async function initializeChat() {
+  const initializeChat = async () => {
     try {
       const { id, modelId } = chatParams;
       if (!modelId) {
@@ -98,20 +85,33 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function scrollToBottom() {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }
+  };
 
-  function adjustTextareaHeight() {
+  const adjustTextareaHeight = () => {
     const ta = textareaRef.current;
     if (!ta) return;
     ta.style.height = 'auto';
     const maxHeight = 24 * 5 + 24;
     ta.style.height = Math.min(ta.scrollHeight, maxHeight) + 'px';
     ta.style.overflowY = ta.scrollHeight > maxHeight ? 'auto' : 'hidden';
-  }
+  };
+
+  useEffect(() => {
+    Promise.resolve().then(() => initializeChat());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue]);
 
   async function handleSendMessage() {
     if ((!inputValue.trim() && !attachedImage) || isLoading || !model) return;
@@ -120,7 +120,6 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
     const userImage = attachedImage;
     setInputValue('');
     setAttachedImage(null);
-    setAttachedImageMime('');
 
     const userMsg: MessageItem = {
       id: Date.now().toString(),
@@ -389,7 +388,7 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
               <div className="relative w-16 h-16 rounded-xl border border-outline-variant">
                 <img src={attachedImage} alt="Attached" className="w-full h-full object-cover" />
                 <button
-                  onClick={() => { setAttachedImage(null); setAttachedImageMime(''); }}
+                  onClick={() => { setAttachedImage(null); }}
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-on-surface text-surface rounded-full flex items-center justify-center shadow"
                 >
                   <MaterialSymbol name="close" className="text-xs" />
@@ -413,7 +412,6 @@ export default function ChatDetailScreen({ chatParams }: ChatDetailProps) {
                 const reader = new FileReader();
                 reader.onload = () => {
                   setAttachedImage(reader.result as string);
-                  setAttachedImageMime(file.type);
                 };
                 reader.readAsDataURL(file);
                 e.target.value = '';

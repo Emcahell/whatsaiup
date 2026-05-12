@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 type Language = "en" | "es";
 
@@ -65,7 +65,7 @@ const translationsData: Record<Language, Record<string, string>> = {
     "api_key": "API Key",
     "api_key_placeholder": "Enter your API key",
     "api_key_required": "Please enter your API key",
-    "api_key_security_note": "Your API key is stored locally and never sent to our servers.",
+    "api_key_security_note": "Your API key is stored locally and never sent to servers.",
     "model": "Model",
     "error_saving_model": "Error saving model. Please try again.",
     "delete_confirm_message": "Are you sure you want to delete this AI model? This action cannot be undone.",
@@ -131,7 +131,7 @@ const translationsData: Record<Language, Record<string, string>> = {
     "api_key": "Clave API",
     "api_key_placeholder": "Ingresa tu clave API",
     "api_key_required": "Por favor ingresa tu clave API",
-    "api_key_security_note": "Tu clave API se almacena localmente y nunca se envía a nuestros servidores.",
+    "api_key_security_note": "Tu clave API se almacena localmente y nunca se envía a servidores.",
     "model": "Modelo",
     "error_saving_model": "Error al guardar el modelo. Intenta de nuevo.",
     "delete_confirm_message": "¿Estás seguro de que quieres eliminar este modelo de IA? Esta acción no se puede deshacer.",
@@ -148,14 +148,12 @@ const translationsData: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>("en");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("whatsaiup_language") as Language | null;
-    if (saved) {
-      setLanguage(saved);
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem("whatsaiup_language") as Language) || "en";
     }
-  }, []);
+    return "en";
+  });
 
   const toggleLanguage = () => {
     const newLanguage = language === "en" ? "es" : "en";
