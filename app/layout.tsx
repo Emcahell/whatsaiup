@@ -12,6 +12,9 @@ const robotoFlex = Roboto_Flex({
 export const metadata: Metadata = {
   title: "Whatsaiup",
   description: "Conecta y chatea con tus inteligencias artificiales favoritas",
+  other: {
+    "google": "notranslate",
+  },
 };
 
 export default function RootLayout({
@@ -22,7 +25,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${robotoFlex.variable} h-full antialiased`}
+      className={`${robotoFlex.variable} h-full antialiased notranslate`}
+      translate="no"
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>

@@ -11,6 +11,7 @@ export const MaterialSymbol = ({ name, className = "", filled = false, style }: 
     <span 
       className={`material-symbols-outlined ${className}`}
       style={{ fontVariationSettings: `'FILL' ${filled ? 1 : 0}`, ...style }}
+      translate="no"
     >
       {name}
     </span>
